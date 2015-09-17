@@ -1,6 +1,10 @@
 {
-    "name": "gtheron/rest-bundle",
+    "name": "gtheron/dev-rest-bundle",
+    "type": "symfony-bundle",
     "description": "A bundle based on FriendsOfSymfony/RestBundle. Gives a base pattern for Resource definition and manipulation, along with base Controllers and Services to avoid REST resource manipulation code redundancy.",
+    "keywords": ["rest"],
+    "homepage": "https://github.com/GTheron",
+    "license": "MIT",
     "authors": [
         {
             "name": "Gabriel Théron",
@@ -8,7 +12,20 @@
         }
     ],
     "require": {
+        "php": ">=5.3.9",
         "jms/security-extra-bundle": "1.5.*@dev",
         "friendsofsymfony/rest-bundle": "@dev"
+    },
+
+    "autoload": {
+        "psr-0": { "GTheron\\RestBundle": "" }
+    },
+
+    "target-dir": "GTheron/RestBundle",
+
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.8-dev"
+        }
     }
 }

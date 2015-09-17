@@ -2,3 +2,19 @@ services:
 #    g_theron_rest.example:
 #        class: GTheron\RestBundle\Example
 #        arguments: [@service_id, "plain_value", %parameter%]
+
+    gth_rest.authorization_manager:
+        class: GTheron\RestBundle\Service\AuthorizationManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @security.acl.provider
+            - @security.access.decision_manager
+
+    gth_rest.resource_manager:
+        class: GTheron\RestBundle\Service\ResourceManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @gth_rest.authorization_manager
+            - @event_dispatcher
+            - @form.factory
+            - @annotation_reader

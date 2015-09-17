@@ -1,0 +1,14 @@
+{
+    "name": "gtheron/rest-bundle",
+    "description": "A bundle based on FriendsOfSymfony/RestBundle. Gives a base pattern for Resource definition and manipulation, along with base Controllers and Services to avoid REST resource manipulation code redundancy.",
+    "authors": [
+        {
+            "name": "Gabriel Théron",
+            "email": "gabriel.theron90@gmail.com"
+        }
+    ],
+    "require": {
+        "jms/security-extra-bundle": "1.5.*@dev",
+        "friendsofsymfony/rest-bundle": "@dev"
+    }
+}

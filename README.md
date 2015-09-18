@@ -1,6 +1,6 @@
 # GTheronRestBundle
 
-This bundle depends on [FOSRestBundle](https://github.com/FriendsOfSymfony/FOSRestBundle). In a word, it aims at providing a base for REST resource definition.
+This bundle depends on [FOSRestBundle](https://github.com/FriendsOfSymfony/FOSRestBundle). In a word, it aims at providing a base for REST resource definition and CRUD manipulation.
 
 ## What is this bundle?
 

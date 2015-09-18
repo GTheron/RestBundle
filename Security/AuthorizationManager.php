@@ -9,7 +9,7 @@
 * file that was distributed with this source code.
  */
 
-namespace GTheron\RestBundle\Service;
+namespace GTheron\RestBundle\Security;
 
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\Security\Acl\Dbal\AclProvider;

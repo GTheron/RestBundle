@@ -3,15 +3,15 @@ services:
 #        class: GTheron\RestBundle\Example
 #        arguments: [@service_id, "plain_value", %parameter%]
 
-    #g_theron_rest.authorization_manager:
-    #    class: GTheron\RestBundle\Service\AuthorizationManager
-    #    arguments:
-    #        - @doctrine.orm.entity_manager
-    #        - @security.acl.provider
-    #        - @security.access.decision_manager
+    g_theron_rest.security.authorization_manager:
+        class: GTheron\RestBundle\Security\AuthorizationManager
+        arguments:
+            - @doctrine.orm.entity_manager
+            - @security.acl.provider
+            - @security.access.decision_manager
 
-    g_theron_rest.resource_manager:
-        class: GTheron\RestBundle\Service\ResourceManager
+    g_theron_rest.security.resource_manager:
+        class: GTheron\RestBundle\Security\ResourceManager
         arguments:
             - @doctrine.orm.entity_manager
             - @event_dispatcher

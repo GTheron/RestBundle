@@ -31,46 +31,34 @@ use GTheron\RestBundle\Event\ResourceEvent;
 */
 class ResourceManager
 {
-
     private $em;
     private $dispatcher;
     private $formFactory;
     private $reader;
-    private $authorizationManager;
-    private $useSecurity;
 
     public function __construct(
         EntityManager $em,
         EventDispatcherInterface $dispatcher,
         FormFactoryInterface $formFactory,
-        Reader $reader,
-        AuthorizationManager $authorizationManager,
-        $useSecurity
+        Reader $reader
     )
     {
         $this->em = $em;
         $this->dispatcher = $dispatcher;
         $this->formFactory = $formFactory;
         $this->reader = $reader;
-        $this->authorizationManager = $authorizationManager;
-        $this->useSecurity = $useSecurity;
     }
 
     /**
      * @param ResourceInterface $resource
-     * @param UserInterface $creator
      * @param bool $andFlush
      * @return ResourceInterface
      * @throws \Exception
      */
-    public function create(ResourceInterface $resource, UserInterface $creator = null, $andFlush = true)
+    public function create(ResourceInterface $resource, $andFlush = true)
     {
         $resource->updateTimeStamps();
         $this->save($resource, $andFlush);
-
-        if(!is_null($creator))
-            $this->authorizationManager
-                ->grantMask($resource, MaskBuilder::MASK_OWNER, UserSecurityIdentity::fromAccount($creator));
 
         $event = new ResourceEvent($resource);
         $this->dispatcher->dispatch($this->getEvent($resource, 'CREATED'), $event);
@@ -115,8 +103,6 @@ class ResourceManager
      */
     public function delete(ResourceInterface $resource, $andFlush = true)
     {
-        $this->authorizationManager->deleteAcl($resource);
-
         $resource->setDeleted(true);
         $resource->setDeletedAt(new \DateTime());
 
@@ -169,6 +155,7 @@ class ResourceManager
         $parameters = array_intersect_key($parameters, $children);
 
         //TODO refactor constant where it makes sense
+        //If the given method is a patch, we won't need all expected fields to be given
         $form->submit($parameters, ResourceController::HTTP_METHOD_PATCH !== $method);
         if ($form->isValid()) {
             return $form->getData();

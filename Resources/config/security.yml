@@ -18,4 +18,3 @@ services:
             - @form.factory
             - @annotation_reader
             - @g_theron_rest.authorization_manager
-            - %g_theron_rest.use_security%

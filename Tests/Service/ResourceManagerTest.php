@@ -10,6 +10,7 @@
  */
 
 namespace GTheron\RestBundle\Tests\Service;
+use GTheron\RestBundle\Service\ResourceManager;
 
 /**
  * ResourceManagerTest
@@ -37,11 +38,16 @@ class ResourceManagerTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
-        $this->em = \Mockery::mock('Doctrine\ORM\EntityManager');
-        $this->am = \Mockery::mock('Common\RestBundle\Service\AuthorizationManager');
-        $this->dispatcher = \Mockery::mock('Symfony\Component\EventDispatcher\EventDispatcher');
-        $this->formFactory = \Mockery::mock('Symfony\Component\Form\FormFactory');
-        $this->reader = \Mockery::mock('Doctrine\Common\Annotations\AnnotationReader');
+        $this->em = $this->getMockBuilder('Doctrine\ORM\EntityManager')
+            ->getMock();
+        $this->am = $this->getMockBuilder('Common\RestBundle\Service\AuthorizationManager')
+            ->getMock();
+        $this->dispatcher = $this->getMockBuilder('Symfony\Component\EventDispatcher\EventDispatcher')
+            ->getMock();
+        $this->formFactory = $this->getMockBuilder('Symfony\Component\Form\FormFactory')
+            ->getMock();
+        $this->reader = $this->getMockBuilder('Doctrine\Common\Annotations\AnnotationReader')
+            ->getMock();
 
         $this->resourceManager = new ResourceManager(
             $this->em,
@@ -51,12 +57,18 @@ class ResourceManagerTest extends \PHPUnit_Framework_TestCase
             $this->reader
         );
 
-        $this->resource = \Mockery::mock('Common\RestBundle\Model\ResourceInterface');
-        $this->resourceAnnotation = \Mockery::mock('Common\RestBundle\Annotation\ResourceAnnotation');
-        $this->disableable = \Mockery::mock('Common\RestBundle\Model\DisableableResourceInterface');
-        $this->user = \Mockery::mock('Symfony\Component\Security\Core\User\UserInterface');
-        $this->uow = \Mockery::mock('Doctrine\ORM\UnitOfWork');
-        $this->repository = \Mockery::mock('Doctrine\ORM\Repository');
+        $this->resource = $this->getMockBuilder('Common\RestBundle\Model\ResourceInterface')
+            ->getMock();
+        $this->resourceAnnotation = $this->getMockBuilder('Common\RestBundle\Annotation\ResourceAnnotation')
+            ->getMock();
+        $this->disableable = $this->getMockBuilder('Common\RestBundle\Model\DisableableResourceInterface')
+            ->getMock();
+        $this->user = $this->getMockBuilder('Symfony\Component\Security\Core\User\UserInterface')
+            ->getMock();
+        $this->uow = $this->getMockBuilder('Doctrine\ORM\UnitOfWork')
+            ->getMock();
+        $this->repository = $this->getMockBuilder('Doctrine\ORM\Repository')
+            ->getMock();
 
         //Boilerplate code for getEvent
         $this->reader->shouldReceive('getClassAnnotation')->andReturn($this->resourceAnnotation);

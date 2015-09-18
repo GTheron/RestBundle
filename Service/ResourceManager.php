@@ -32,18 +32,20 @@ use GTheron\RestBundle\Event\ResourceEvent;
 class ResourceManager
 {
 
-    private $em,
-        $authorizationManager,
-        $dispatcher,
-        $formFactory,
-        $reader;
+    private $em;
+    private $dispatcher;
+    private $formFactory;
+    private $reader;
+    private $authorizationManager;
+    private $useSecurity;
 
     public function __construct(
         EntityManager $em,
         EventDispatcherInterface $dispatcher,
         FormFactoryInterface $formFactory,
         Reader $reader,
-        AuthorizationManager $authorizationManager
+        AuthorizationManager $authorizationManager,
+        $useSecurity
     )
     {
         $this->em = $em;
@@ -51,6 +53,7 @@ class ResourceManager
         $this->formFactory = $formFactory;
         $this->reader = $reader;
         $this->authorizationManager = $authorizationManager;
+        $this->useSecurity = $useSecurity;
     }
 
     /**

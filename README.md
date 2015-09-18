@@ -14,7 +14,7 @@ This bundle aims to provide a base definition for exposed Resources, as well as 
 Note that as the moment of writing, I basically just ported code. There are a few things I need to work on before it's quite ready for use:
 * Making authorization checks optional
 * Offering more/better events in the validation cycle
-* Making events automatic...?
+* Making event generation automatic...?
 * Probably more stuff to come
 
 Feel free to take a look at the code and provide suggestions!

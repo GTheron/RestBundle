@@ -2,7 +2,7 @@
 
 This bundle depends on [FOSRestBundle](https://github.com/FriendsOfSymfony/FOSRestBundle). In a word, it aims at providing a base for REST resource definition.
 
-## What is this bundle
+## What is this bundle?
 
 If you're working on a REST api with Symfony2, you probably have used [FOSRestBundle](https://github.com/FriendsOfSymfony/FOSRestBundle). It offers functionnality for controllers and automatic routing, which is remarkably handy for building any REST api.
 

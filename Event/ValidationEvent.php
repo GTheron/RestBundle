@@ -12,29 +12,30 @@
 namespace GTheron\RestBundle\Event;
 
 use GTheron\RestBundle\Model\ResourceInterface;
-use Symfony\Component\EventDispatcher\Event;
+use Symfony\Component\Form\FormInterface;
 
 /**
- * Represents an event in a Resource lifecycle
+ * ValidationEvent
  *
  * @package GTheron\RestBundle\Event;
- * @author Gabriel Théron <gabriel.theron90@gmail.com>
+ * @author Gabriel Théron
 */
-class ResourceEvent extends Event
+class ValidationEvent extends ResourceEvent
 {
-    protected $resource;
+    protected $form;
 
-    public function __construct(ResourceInterface $resource)
+    public function __construct(ResourceInterface $resource, FormInterface $form = null)
     {
-        $this->resource = $resource;
+        parent::__construct($resource);
+        $this->form = $form;
     }
 
     /**
-     * @return ResourceInterface
+     * @return FormInterface
      */
-    public function getResource()
+    public function getForm()
     {
-        return $this->resource;
+        return $this->form;
     }
 
 }

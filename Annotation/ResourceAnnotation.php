@@ -22,14 +22,15 @@ namespace GTheron\RestBundle\Annotation;
 */
 class ResourceAnnotation
 {
-    public $formTypeClass,
-        $rolesClass,
-        $eventsClass,
-        $shortName,
-        $repositoryClass;
+    public $formTypeClass;
+    //TODO remove shortName
+    public $shortName;
+    public $repositoryClass;
+    public $eventPrefix;
+    public $rolePrefix;
 
     /**
-     * @return mixed
+     * @return string
      */
     public function getFormTypeClass()
     {
@@ -37,7 +38,7 @@ class ResourceAnnotation
     }
 
     /**
-     * @param mixed $formTypeClass
+     * @param string $formTypeClass
      */
     public function setFormTypeClass($formTypeClass)
     {
@@ -45,41 +46,9 @@ class ResourceAnnotation
     }
 
     /**
-     * @return mixed
-     */
-    public function getRolesClass()
-    {
-        return $this->rolesClass;
-    }
-
-    /**
-     * @param mixed $rolesClass
-     */
-    public function setRolesClass($rolesClass)
-    {
-        $this->rolesClass = $rolesClass;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getEventsClass()
-    {
-        return $this->eventsClass;
-    }
-
-    /**
-     * @param mixed $eventsClass
-     */
-    public function setEventsClass($eventsClass)
-    {
-        $this->eventsClass = $eventsClass;
-    }
-
-    /**
      * Used for prefixing Roles and Events
      *
-     * @return mixed
+     * @return string
      */
     public function getShortName()
     {
@@ -87,7 +56,7 @@ class ResourceAnnotation
     }
 
     /**
-     * @param mixed $shortName
+     * @param string $shortName
      */
     public function setShortName($shortName)
     {
@@ -95,7 +64,7 @@ class ResourceAnnotation
     }
 
     /**
-     * @return mixed
+     * @return string
      */
     public function getRepositoryClass()
     {
@@ -103,10 +72,42 @@ class ResourceAnnotation
     }
 
     /**
-     * @param mixed $repositoryClass
+     * @param string $repositoryClass
      */
     public function setRepositoryClass($repositoryClass)
     {
         $this->repositoryClass = $repositoryClass;
+    }
+
+    /**
+     * @return string
+     */
+    public function getEventPrefix()
+    {
+        return $this->eventPrefix;
+    }
+
+    /**
+     * @param string $evenPrefix
+     */
+    public function setEventPrefix($evenPrefix)
+    {
+        $this->eventPrefix = $evenPrefix;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRolePrefix()
+    {
+        return $this->rolePrefix;
+    }
+
+    /**
+     * @param string $rolePrefix
+     */
+    public function setRolePrefix($rolePrefix)
+    {
+        $this->rolePrefix = $rolePrefix;
     }
 }

@@ -8,6 +8,7 @@ namespace GTheron\RestBundle\Security;
 
 use Doctrine\ORM\EntityManager;
 use GTheron\RestBundle\Model\ResourceInterface;
+use GTheron\RestBundle\Service\ResourceManager;
 use JMS\Serializer\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\CssSelector\Parser\Reader;
@@ -21,7 +22,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
  * @package GTheron\RestBundle\Security;
  * @author Gabriel Théron
 */
-class ResourceManager extends \GTheron\RestBundle\Service\ResourceManager
+class SecurityResourceManager extends ResourceManager implements SecurityResourceManagerInterface
 {
     private $em;
     private $dispatcher;
@@ -75,4 +76,20 @@ class ResourceManager extends \GTheron\RestBundle\Service\ResourceManager
         return parent::delete($resource, $andFlush);
     }
 
+    /**
+     * Gets a role on a resource from its suffix and the resource's class
+     *
+     * For an AcmeBlogBundle:Post entity, the rolePrefix should look like "ACME_BLOG_POST"
+     * For the "CREATE" roleSuffix, this function would return "ROLE_ACME_BLOG_POST_CREATE"
+     *
+     * @param ResourceInterface $resource
+     * @param string $roleSuffix
+     * @return string
+     */
+    public function getRole(ResourceInterface $resource, $roleSuffix)
+    {
+        //Symfony, y u use "ROLE_" as an obligatory role prefix? :(
+        $rolePrefix = "ROLE_".$this->readResourceAnnotations($resource)->getRolePrefix();
+        return constant($rolePrefix."_".$roleSuffix);
+    }
 }

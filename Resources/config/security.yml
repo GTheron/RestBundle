@@ -11,7 +11,7 @@ services:
             - @security.access.decision_manager
 
     g_theron_rest.security.resource_manager:
-        class: GTheron\RestBundle\Security\ResourceManager
+        class: GTheron\RestBundle\Security\SecurityResourceManager
         arguments:
             - @doctrine.orm.entity_manager
             - @event_dispatcher

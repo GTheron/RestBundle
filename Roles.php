@@ -12,13 +12,19 @@
 namespace GTheron\RestBundle;
 
 /**
- * GTheronRestRoles
+ * Contains basic role names
  *
  * @package GTheron\RestBundle;
  * @author Gabriel Théron <gabriel.theron90@gmail.com>
 */
-class GTheronRestRoles
+class Roles
 {
+    const VIEW = 'VIEW';
+
+    const EDIT = 'EDIT';
+
+    const DELETE = 'DELETE';
+
     /**
      * Represents the suffix of the role of users who can view all resources of a certain type
      * An actual resource's VIEW_ALL role would look like this: ROLE_RESOURCE_VIEW_ALL

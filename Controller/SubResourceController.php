@@ -12,8 +12,8 @@
 namespace GTheron\RestBundle\Controller;
 
 use GTheron\RestBundle\Annotation\SubResourceControllerAnnotation;
-use GTheron\RestBundle\GTheronRestRoles;
 use GTheron\RestBundle\Model\ResourceInterface;
+use GTheron\RestBundle\Roles;
 use GTheron\RestBundle\Service\SubResourceManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -43,11 +43,9 @@ abstract class SubResourceController extends ResourceController
     {
         $this->checkParent($slug);
 
-        $ac = $this->get('security.authorization_checker');
-        if(!$ac->isGranted($this->getResourceRole(GTheronRestRoles::VIEW_ALL)))
-        {
-            throw new AccessDeniedHttpException();
-        }
+        $resourceClass = $this->getResourceClass();
+        $resource = new $resourceClass();
+        $this->checkAuthorization(Roles::VIEW_ALL, $resource);
 
         $srm = $this->getSubResourceManager();
         $resourceClass = $this->getResourceClass();
@@ -66,7 +64,7 @@ abstract class SubResourceController extends ResourceController
     protected function getSubResourceView($slug, $uid)
     {
         $this->checkParent($slug);
-        $resource = $this->getAuthorizedResource('VIEW', $this->getResourceClass(), $uid);
+        $resource = $this->getAuthorizedResource(Roles::VIEW, $this->getResourceClass(), $uid);
 
         return $this->handleView($this->view($resource));
     }
@@ -84,7 +82,7 @@ abstract class SubResourceController extends ResourceController
 
         $resourceClass = $this->getResourceClass();
         $resource = new $resourceClass();
-        $this->checkAuthorization('CREATE', $resource);
+        $this->checkAuthorization(Roles::CREATE, $resource);
 
         //resource should implement SubResourceInterface
         $resource->setParent($parent);

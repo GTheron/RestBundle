@@ -13,10 +13,12 @@ namespace GTheron\RestBundle\Controller;
 
 use FOS\RestBundle\Controller\FOSRestController;
 use GTheron\RestBundle\Annotation\ResourceControllerAnnotation;
-use GTheron\RestBundle\GTheronRestRoles;
 use GTheron\RestBundle\Model\LinkableResourceInterface;
 use GTheron\RestBundle\Model\ResourceInterface;
+use GTheron\RestBundle\Roles;
+use GTheron\RestBundle\Security\SecurityResourceManagerInterface;
 use GTheron\RestBundle\Service\ResourceManager;
+use GTheron\RestBundle\Service\ResourceManagerInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,7 +34,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
  * @package GTheron\RestBundle\Controller;
  * @author Gabriel Théron <gabriel.theron90@gmail.com>
 */
-class ResourceController extends FOSRestController
+abstract class ResourceController extends FOSRestController
 {
     //TODO refactor those constants somewhere better
     const HTTP_METHOD_GET = 'GET';
@@ -44,7 +46,7 @@ class ResourceController extends FOSRestController
     const HTTP_METHOD_UNLINK = 'UNLINK';
 
     /**
-     * Returns a standard collection view for a resourceClass
+     * Returns a standard collection view for the controller's Resource
      *
      * @throws AccessDeniedHttpException
      * @return Response
@@ -52,15 +54,12 @@ class ResourceController extends FOSRestController
     protected function getResourceCollectionView()
     {
         $rm = $this->getResourceManager();
-        $ac = $this->get('security.authorization_checker');
 
         $resourceClass = $this->getResourceClass();
-        if(!$ac->isGranted($rm->getRole(new $resourceClass(), GTheronRestRoles::VIEW_ALL)))
-        {
-            throw new AccessDeniedHttpException();
-        }
+        $resource = new $resourceClass();
+        $this->checkAuthorization(Roles::VIEW_ALL, $resource);
 
-        $resources = $rm->findAll(new $resourceClass());
+        $resources = $rm->findAll($resource);
 
         return $this->handleView($this->view($resources));
     }
@@ -74,7 +73,7 @@ class ResourceController extends FOSRestController
     protected function getResourceView($uid)
     {
         $resourceClass = $this->getResourceClass();
-        $resource = $this->getAuthorizedResource('VIEW', $resourceClass, $uid);
+        $resource = $this->getAuthorizedResource(Roles::VIEW, $resourceClass, $uid);
 
         return $this->handleView($this->view($resource));
     }
@@ -89,7 +88,7 @@ class ResourceController extends FOSRestController
     {
         $resourceClass = $this->getResourceClass();
         $resource = new $resourceClass();
-        $this->checkAuthorization('CREATE', $resource);
+        $this->checkAuthorization(Roles::CREATE, $resource);
         return $this->processResource($resource, $request, true);
     }
 
@@ -103,7 +102,7 @@ class ResourceController extends FOSRestController
     protected function putResourceView(Request $request, $uid)
     {
         $resourceClass = $this->getResourceClass();
-        $resource = $this->getAuthorizedResource('EDIT', $resourceClass, $uid);
+        $resource = $this->getAuthorizedResource(Roles::EDIT, $resourceClass, $uid);
         return $this->processResource($resource, $request, false);
     }
 
@@ -116,7 +115,7 @@ class ResourceController extends FOSRestController
     protected function deleteResourceView($uid)
     {
         $resourceClass = $this->getResourceClass();
-        $resource = $this->getAuthorizedResource('DELETE', $resourceClass, $uid);
+        $resource = $this->getAuthorizedResource(Roles::DELETE, $resourceClass, $uid);
 
         $rm = $this->getResourceManager();
         $rm->delete($resource);
@@ -125,6 +124,8 @@ class ResourceController extends FOSRestController
     }
 
     /**
+     * Finds a given Resource, throwing a NotFound exception if was not found
+     *
      * @param string $resourceClass
      * @param string $uid
      * @throws NotFoundHttpException
@@ -141,6 +142,7 @@ class ResourceController extends FOSRestController
 
     /**
      * Verifies that the current security context has the right to access a resource
+     * If they don't, will throw an exception
      *
      * @param string $accessRight Represents the required access right (EDIT, DELETE, OWNER, ...)
      * @param ResourceInterface $resource
@@ -149,43 +151,51 @@ class ResourceController extends FOSRestController
      */
     protected function checkAuthorization($accessRight, ResourceInterface $resource)
     {
-        $ac = $this->get('security.authorization_checker');
+        if($this->isUsingSecurity()){
+            $ac = $this->get('security.authorization_checker');
 
-        //Managing CREATE case
-        if($accessRight == 'CREATE')
-        {
-            $createRole = $this->getResourceManager()->getRole($resource, GTheronRestRoles::CREATE);
-            if(!$ac->isGranted($createRole)) throw new AccessDeniedException();
-        }
-        else{
-            if(!$ac->isGranted($accessRight, $resource))
+            //TODO find a way to make this function extensible
+
+            //Managing CREATE case
+            if($accessRight == 'CREATE')
             {
-                $bypass = false;
-                //Managing VIEW_ALL case
-                if($accessRight == 'VIEW')
+                $createRole = $this->getResourceManager()->getRole($resource, Roles::CREATE);
+                if(!$ac->isGranted($createRole)) throw new AccessDeniedException();
+            }
+            else{
+                if(!$ac->isGranted($accessRight, $resource))
                 {
-                    $viewAllRole = $this->getResourceManager()->getRole($resource, GTheronRestRoles::VIEW_ALL);
-                    if($ac->isGranted($viewAllRole)) $bypass = true;
-                }
-                elseif($accessRight == 'EDIT')
-                {
-                    $viewAllRole = $this->getResourceManager()->getRole($resource, GTheronRestRoles::EDIT_ALL);
-                    if($ac->isGranted($viewAllRole)) $bypass = true;
-                } elseif ($accessRight == 'DELETE') {
-                    $viewAllRole = $this->getResourceManager()->getRole($resource, GTheronRestRoles::DELETE_ALL);
-                    if ($ac->isGranted($viewAllRole)) {
-                        $bypass = true;
+                    $bypass = false;
+                    //Managing general action types
+                    if($accessRight == Roles::VIEW)
+                    {
+                        $viewAllRole = $this->getResourceManager()->getRole($resource, Roles::VIEW_ALL);
+                        if($ac->isGranted($viewAllRole)) $bypass = true;
                     }
+                    elseif($accessRight == Roles::EDIT)
+                    {
+                        $viewAllRole = $this->getResourceManager()->getRole($resource, Roles::EDIT_ALL);
+                        if($ac->isGranted($viewAllRole)) $bypass = true;
+                    } elseif ($accessRight == Roles::DELETE) {
+                        $viewAllRole = $this->getResourceManager()->getRole($resource, Roles::DELETE_ALL);
+                        if ($ac->isGranted($viewAllRole)) {
+                            $bypass = true;
+                        }
+                    }
+                    if(!$bypass) throw new AccessDeniedHttpException();
                 }
-                if(!$bypass) throw new AccessDeniedHttpException();
             }
         }
+        //If we're not using the security component, we'll always grant authorization
+
         return true;
     }
 
     /**
      * Verifies that the requested object exists and that the current security context has the requested
      * access right on it
+     *
+     * When security is disabled, checkAuthorization will never fail
      *
      * @param string $accessRight
      * @param string $resourceClass
@@ -207,6 +217,8 @@ class ResourceController extends FOSRestController
      * - '<http://localhost:80/org/orgdfgldk6546d5g4/users/usrfdg654gdf>; rel="link"'
      * the function will return "usrfdg654gdf"
      *
+     * TODO generalize or remove
+     *
      * @param string $resourcePath
      * @param string $header
      * @return string
@@ -221,6 +233,8 @@ class ResourceController extends FOSRestController
 
     /**
      * Returns an authorized resource from a Link header
+     *
+     * TODO generalize or remove
      *
      * @param $resourcePath
      * @param $header
@@ -255,6 +269,7 @@ class ResourceController extends FOSRestController
 
         $resourceClass = get_class($resource);
         if(!($validation instanceof $resourceClass)){
+            //TODO clarify error formats
             $validationObject = array();
             if(is_string($validation))
                 $validationObject['error'] = $validation;
@@ -289,16 +304,14 @@ class ResourceController extends FOSRestController
         AbstractType $formType = null
     )
     {
-        //Initializing
+        //Initialization
         $rm = $this->getResourceManager();
         $parameters = $request->request->all();
 
         //validation
         $method = $isNew ? ResourceController::HTTP_METHOD_POST : ResourceController::HTTP_METHOD_PATCH;
 
-        $this->beforeValidation($resource, $request, $isNew);
         $resource = $this->validateResource($resource, $parameters, $method, $formType);
-        $this->afterValidation($resource, $request, $isNew);
 
         //Saving the resource
         if($isNew) $rm->create($resource);
@@ -315,6 +328,8 @@ class ResourceController extends FOSRestController
      * Sets a link between two resources, one being the $owner and the other a $foreign.
      * This either adds or remove the $foreign from the $owner's corresponding collection,
      * throwing a HttpException accordingly
+     *
+     * TODO generalize or remove
      *
      * @param LinkableResourceInterface $owner
      * @param ResourceInterface $foreign
@@ -333,6 +348,7 @@ class ResourceController extends FOSRestController
         //Checking whether resources are already linked
         $alreadyLinked = $owner->checkLink($foreign);
         $toBeLinked = $method == ResourceController::HTTP_METHOD_LINK;
+        //TODO allow bidirectional relations to be established
         if($toBeLinked == $alreadyLinked){
             $message = $alreadyLinked ? 'Resources already linked' : 'Resources are not linked';
             throw new HttpException(409, $message);
@@ -356,12 +372,17 @@ class ResourceController extends FOSRestController
     /**
      * Returns a specific resource role from its class and a ResourceManager::Role
      *
+     * TODO find out if this is used
+     *
      * @param $role
      * @return string
+     * @throws \Exception
      */
     protected function getResourceRole($role)
     {
         $rm = $this->getResourceManager();
+        if(!$rm instanceof SecurityResourceManagerInterface)
+            throw new \Exception("Can't use roles with non Security ResourceManager");
         $resourceClass = $this->getResourceClass();
         return $rm->getRole(new $resourceClass(), $role);
     }
@@ -406,34 +427,18 @@ class ResourceController extends FOSRestController
     }
 
     /**
-     * Override to execute operations before resource validation
-     *
-     * @param ResourceInterface $resource
-     * @param Request $request
-     * @param bool $isNew
-     */
-    protected function beforeValidation(ResourceInterface $resource, Request $request, $isNew = false)
-    {
-        //TODO refactor this callback as an event
-    }
-
-    /**
-     * Override to execute operations after resource validation
-     *
-     * @param ResourceInterface $resource
-     * @param Request $request
-     * @param bool $isNew
-     */
-    protected function afterValidation(ResourceInterface $resource, Request $request, $isNew = false)
-    {
-        //TODO refactor this callback as an event
-    }
-
-    /**
-     * @return ResourceManager
+     * @return ResourceManagerInterface
      */
     protected function getResourceManager()
     {
-        return $this->get('cm_rest.resource_manager');
+        return $this->get('g_theron_rest.resource_manager');
+    }
+
+    /**
+     * @return boolean
+     */
+    protected function isUsingSecurity()
+    {
+        return $this->getParameter('g_theron_rest.use_security');
     }
 }

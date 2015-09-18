@@ -10,17 +10,18 @@
  */
 
 namespace GTheron\RestBundle\Service;
+
 use Doctrine\ORM\EntityManager;
+use GTheron\RestBundle\Annotation\ResourceAnnotation;
 use GTheron\RestBundle\Controller\ResourceController;
+use GTheron\RestBundle\Event\ValidationEvent;
+use GTheron\RestBundle\Events;
 use GTheron\RestBundle\Model\DisableableResourceInterface;
 use \Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormFactoryInterface;
 use Doctrine\Common\Annotations\Reader;
 use GTheron\RestBundle\Model\ResourceInterface;
-use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Security\Acl\Permission\MaskBuilder;
-use Symfony\Component\Security\Acl\Domain\UserSecurityIdentity;
 use GTheron\RestBundle\Event\ResourceEvent;
 
 /**
@@ -61,7 +62,7 @@ class ResourceManager
         $this->save($resource, $andFlush);
 
         $event = new ResourceEvent($resource);
-        $this->dispatcher->dispatch($this->getEvent($resource, 'CREATED'), $event);
+        $this->dispatcher->dispatch($this->getEvent($resource, Events::CREATED), $event);
 
         return $resource;
     }
@@ -82,6 +83,7 @@ class ResourceManager
 
         if($andFlush) $this->em->flush();
 
+        //TODO allow configuration of the disabled field name
         if(array_key_exists('disabled', $changeSet)){
             $disable = $changeSet['disabled'][1];
             if ($disable === true) $this->setDisabled($resource, true, $andFlush);
@@ -89,7 +91,7 @@ class ResourceManager
         }
 
         $event = new ResourceEvent($resource);
-        $this->dispatcher->dispatch($this->getEvent($resource, 'UPDATED'), $event);
+        $this->dispatcher->dispatch($this->getEvent($resource, Events::UPDATED), $event);
 
         return $resource;
     }
@@ -109,7 +111,7 @@ class ResourceManager
         $this->save($resource, $andFlush);
 
         $event = new ResourceEvent($resource);
-        $this->dispatcher->dispatch($this->getEvent($resource, 'DELETED'), $event);
+        $this->dispatcher->dispatch($this->getEvent($resource, Events::DELETED), $event);
 
         return $resource;
     }
@@ -124,6 +126,9 @@ class ResourceManager
         $this->em->persist($resource);
         if($andFlush) $this->em->flush();
 
+        $event = new ResourceEvent($resource);
+        $this->dispatcher->dispatch($this->getEvent($resource, Events::DELETED), $event);
+
         return $resource;
     }
 
@@ -132,7 +137,7 @@ class ResourceManager
      *
      * @param ResourceInterface $resource
      * @param array $parameters
-     * @param $method
+     * @param string $method
      * @param AbstractType $formType
      * @return mixed
      */
@@ -143,6 +148,9 @@ class ResourceManager
         AbstractType $formType = null
     )
     {
+        $beforeEvent = new ResourceEvent($resource);
+        $this->dispatcher->dispatch($this->getEvent($resource, Events::BEFORE_VALIDATION), $beforeEvent);
+
         if($formType == null) {
             $formTypeClass = $this->getFormType($resource);
             $formType = new $formTypeClass();
@@ -157,9 +165,16 @@ class ResourceManager
         //TODO refactor constant where it makes sense
         //If the given method is a patch, we won't need all expected fields to be given
         $form->submit($parameters, ResourceController::HTTP_METHOD_PATCH !== $method);
+
+        $endEvent = new ValidationEvent($resource, $form);
+
         if ($form->isValid()) {
+            $this->dispatcher->dispatch($this->getEvent($resource, Events::VALIDATION_SUCCESS), $endEvent);
+
             return $form->getData();
         }
+
+        $this->dispatcher->dispatch($this->getEvent($resource, Events::VALIDATION_FAILED), $endEvent);
 
         return $form;
     }
@@ -218,21 +233,19 @@ class ResourceManager
      */
     public function getRepository(ResourceInterface $resource)
     {
-        //throw new \Exception(get_class($resource));
+        //TODO remove gross string fabrication
         $annotation = $this->readResourceAnnotations($resource);
         $shortName = $annotation->getShortName();
         $repositoryClass = $annotation->getRepositoryClass();
 
         //Getting the Repository from the resource's name
         $fullClass = explode('\\', $repositoryClass);
-        //Will be something like CommonUserBundle:Organisation
+        //Will be something like AcmeBlogBundle:Post
         return $this->em->getRepository($fullClass[0].$fullClass[1].':'.$shortName);
     }
 
     /**
      * Returns an resource's associated FormType class
-     * For instance, for Common\UserBundle\Entity\Organisation, this will return
-     * Common\UserBundle\Form\Type\OrganisationFormType
      *
      * @param ResourceInterface $resource
      * @return string
@@ -244,7 +257,6 @@ class ResourceManager
 
     /**
      * Returns the short class name of an resource, which is used as a base for all classes name prediction
-     * For instance, for Common\UserBundle\Entity\Organisation, this will return Organisation
      *
      * @param ResourceInterface $resource
      * @return string
@@ -252,17 +264,6 @@ class ResourceManager
     public function getResourceShortName(ResourceInterface $resource)
     {
         return $this->readResourceAnnotations($resource)->getShortName();
-    }
-
-    /**
-     * Returns the Roles class of the associated bundle
-     *
-     * @param ResourceInterface $resource
-     * @return string
-     */
-    public function getRoleClass(ResourceInterface $resource)
-    {
-        return $this->readResourceAnnotations($resource)->getRolesClass();
     }
 
     /**
@@ -276,20 +277,6 @@ class ResourceManager
     {
         $event = new ResourceEvent($resource);
         $this->dispatcher->dispatch($this->getEvent($resource, $type), $event);
-    }
-
-    /**
-     * Gets a role on a resource from its suffix and the resource's class
-     *
-     * @param ResourceInterface $resource
-     * @param string $roleSuffix
-     * @return string
-     */
-    public function getRole(ResourceInterface $resource, $roleSuffix)
-    {
-        $shortName = $this->readResourceAnnotations($resource)->getShortName();
-        return constant($this->getRoleClass($resource).'::'.strtoupper($shortName)."_".$roleSuffix);
-
     }
 
     /**
@@ -314,6 +301,9 @@ class ResourceManager
     /**
      * Returns an event in the Events class determined from the resource's annotations
      *
+     * For an AcmeBlogBundle:Post entity, the eventPrefix should look like "acme_blog.post"
+     * On a resource creation, this function would return "acme_blog.post.created"
+     *
      * @param ResourceInterface $resource
      * @param string $type
      * @return string
@@ -322,10 +312,9 @@ class ResourceManager
     protected function getEvent(ResourceInterface $resource, $type)
     {
         $annotation = $this->readResourceAnnotations($resource);
-        $eventsClass = $annotation->getEventsClass();
-        $shortName = $annotation->getShortName();
+        $prefix = $annotation->getEventPrefix();
 
-        return constant($eventsClass.'::'.strtoupper($shortName)."_".$type);
+        return $prefix.".".$type;
     }
 
     /**
@@ -333,13 +322,13 @@ class ResourceManager
      *
      * @param ResourceInterface $resource
      * @throws \Exception
-     * @return object
+     * @return ResourceAnnotation
      */
     protected function readResourceAnnotations(ResourceInterface $resource)
     {
         $restableAnnotation = $this->reader->getClassAnnotation(
             new \ReflectionClass($resource),
-            'Common\\RestBundle\\Annotation\\ResourceAnnotation'
+            'GTheron\\RestBundle\\Annotation\\ResourceAnnotation'
         );
         if(!$restableAnnotation) {
             throw new \Exception(

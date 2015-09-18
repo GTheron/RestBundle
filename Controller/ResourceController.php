@@ -51,7 +51,7 @@ abstract class ResourceController extends FOSRestController
      * @throws AccessDeniedHttpException
      * @return Response
      */
-    protected function getResourceCollectionView()
+    protected function cgetResourceResponse()
     {
         $rm = $this->getResourceManager();
 
@@ -70,7 +70,7 @@ abstract class ResourceController extends FOSRestController
      * @param string $uid
      * @return Response
      */
-    protected function getResourceView($uid)
+    protected function getResourceResponse($uid)
     {
         $resourceClass = $this->getResourceClass();
         $resource = $this->getAuthorizedResource(Roles::VIEW, $resourceClass, $uid);
@@ -84,7 +84,7 @@ abstract class ResourceController extends FOSRestController
      * @param Request $request
      * @return Response
      */
-    protected function postResourceView(Request $request)
+    protected function postResourceResponse(Request $request)
     {
         $resourceClass = $this->getResourceClass();
         $resource = new $resourceClass();
@@ -99,7 +99,7 @@ abstract class ResourceController extends FOSRestController
      * @param $uid
      * @return Response
      */
-    protected function putResourceView(Request $request, $uid)
+    protected function putResourceResponse(Request $request, $uid)
     {
         $resourceClass = $this->getResourceClass();
         $resource = $this->getAuthorizedResource(Roles::EDIT, $resourceClass, $uid);
@@ -112,7 +112,7 @@ abstract class ResourceController extends FOSRestController
      * @param $uid
      * @return Response
      */
-    protected function deleteResourceView($uid)
+    protected function deleteResourceResponse($uid)
     {
         $resourceClass = $this->getResourceClass();
         $resource = $this->getAuthorizedResource(Roles::DELETE, $resourceClass, $uid);

@@ -12,10 +12,13 @@ This meant code repetition in Controllers, Services and Models.
 This bundle aims to provide a base definition for exposed Resources, as well as a service that provides CRUD operations for all resources, and abstract controllers with boilerplate code for the most common functions (cget, get, post and put - delete being quite trivial to write generally).
 
 Note that as the moment of writing, I basically just ported code. There are a few things I need to work on before it's quite ready for use:
-* Making authorization checks optional > Written, being tested
-* Offering more/better events in the validation cycle > Written, being tested
-* Making event generation automatic...? Written, being tested
-* Probably more stuff to come
+
+| Feature | State |
+| ------------- | ------------- |
+| Making authorization checks optional | Written, being tested |
+| Offering more/better events in the validation cycle | Written, being tested |
+| Automatic event generation  | Written, being tested |
+| Recursive resources (sub resource atm) | In design phase |
 
 Feel free to take a look at the code and provide suggestions!
 

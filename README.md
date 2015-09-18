@@ -18,3 +18,9 @@ Note that as the moment of writing, I basically just ported code. There are a fe
 * Probably more stuff to come
 
 Feel free to take a look at the code and provide suggestions!
+
+## Requirements
+
+[FOSRestBundle](https://github.com/FriendsOfSymfony/FOSRestBundle) will be required with composer on install.
+However, at this time, the Symfony ACL system is required to be initialized and ready for use (this is temporary, as it will only be needed in the future if you use the security options of the bundle).
+Refer to this doc to install it: http://symfony.com/doc/current/cookbook/security/acl.html

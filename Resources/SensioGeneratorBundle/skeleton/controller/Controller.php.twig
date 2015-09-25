@@ -1,0 +1,84 @@
+<?php
+
+namespace {{ namespace }}\Controller;
+
+{% block use_statements %}
+use GTheron\RestBundle\Controller\ResourceController;
+{% if 'annotation' == format.routing -%}
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+{% endif %}
+use GTheron\RestBundle\Annotation\ResourceControllerAnnotation;
+use Symfony\Component\HttpFoundation\Request;
+{% endblock use_statements %}
+
+{% block class_definition %}
+/**
+* @ResourceControllerAnnotation(resourceClass="{{ namespace }}\Entity\{{ controller }}")
+*/
+class {{ controller }}Controller extends ResourceController
+{% endblock class_definition %}
+{
+{% block class_body %}
+{% for action in actions %}
+    {# TODO eventually move corresponding action name finding elsewhere #}
+    {% set parentAction = '' %}
+    {% set actionParameters = {} %}
+    {% if action.name == 'getAction' %}
+        {% set parentAction = 'getResourceResponse' %}
+        {% set actionParameters = {
+            '': 'id'
+        } %}
+    {% elseif action.name == 'cgetAction' %}
+        {% set parentAction = 'cgetResourceResponse' %}
+    {% elseif action.name == 'postAction' %}
+        {% set parentAction = 'postResourceResponse' %}
+        {% set actionParameters = {
+            'Request': 'request'
+        } %}
+    {% elseif action.name == 'putAction' %}
+        {% set parentAction = 'putResourceResponse' %}
+        {% set actionParameters = {
+            'Request': 'request',
+            '': 'id'
+        } %}
+    {% elseif action.name == 'deleteAction' %}
+        {% set parentAction = 'deleteResourceResponse' %}
+        {% set actionParameters = {
+            '': 'id'
+        } %}
+    {% endif %}
+
+    {% set params = [] %}
+    {%- if actionParameters|length > 0 -%}
+        {% for type, name in actionParameters %}
+            {% set param = '' %}
+            {% if type|length > 0 %}{% set param = type~' ' %}
+            {% endif %}
+            {% set param = param~'$'~name %}
+            {% set params = params|merge([param]) %}
+        {% endfor %}
+    {%- endif -%}
+
+    {% if 'annotation' == format.routing -%}
+    /**
+     * @Route("{{ action.route }}")
+     */
+    {% endif -%}
+    public function {{ action.name }}({{- params|join(', ') -}})
+    {
+    {% if parentAction|length > 0 %}
+        {% set values = [] %}
+        {%- if actionParameters|length > 0 -%}
+            {% for name in actionParameters %}
+                {% set values = values|merge([name]) %}
+            {% endfor %}
+        {%- endif -%}
+        return parent::{{ parentAction }}(${{- values|join(', $') -}});
+    {% else %}
+        return $this->handleView($this->view());
+    {% endif %}
+    }
+
+{% endfor -%}
+{% endblock class_body %}
+}

@@ -197,15 +197,15 @@ EOT
             }
 
             // route
-            $question = new Question($questionHelper->getQuestion('Action route', '/'.substr($actionName, 0, -6)), '/'.substr($actionName, 0, -6));
+            /*$question = new Question($questionHelper->getQuestion('Action route', '/'.substr($actionName, 0, -6)), '/'.substr($actionName, 0, -6));
             $route = $questionHelper->ask($input, $output, $question);
-            $placeholders = $this->getPlaceholdersFromRoute($route);
+            $placeholders = $this->getPlaceholdersFromRoute($route);*/
 
             // adding action
             $actions[$actionName] = array(
                 'name'         => $actionName,
-                'route'        => $route,
-                'placeholders' => $placeholders,
+                //'route'        => $route,
+                //'placeholders' => $placeholders,
             );
         }
 
@@ -230,12 +230,12 @@ EOT
             $name = array_shift($data);
 
             // route
-            $route = (isset($data[0]) && '' != $data[0]) ? array_shift($data) : '/'.substr($name, 0, -6);
+            /*$route = (isset($data[0]) && '' != $data[0]) ? array_shift($data) : '/'.substr($name, 0, -6);
             if ($route) {
                 $placeholders = $this->getPlaceholdersFromRoute($route);
             } else {
                 $placeholders = array();
-            }
+            }*/
         }
 
         return $newActions;

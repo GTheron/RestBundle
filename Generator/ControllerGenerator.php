@@ -52,13 +52,15 @@ class ControllerGenerator extends Generator
             'controller' => $controller,
         );
 
+        $this->generateRouting($bundle, $controller, $routeFormat);
+
         foreach ($actions as $i => $action) {
             // get the actioname without the sufix Action (for the template logical name)
             $actions[$i]['basename'] = substr($action['name'], 0, -6);
             $params = $parameters;
             $params['action'] = $actions[$i];
 
-            $this->generateRouting($bundle, $controller, $actions[$i], $routeFormat);
+            //$this->generateRouting($bundle, $controller, $actions[$i], $routeFormat);
         }
 
         $parameters['actions'] = $actions;
@@ -67,7 +69,7 @@ class ControllerGenerator extends Generator
         $this->renderFile('controller/ControllerTest.php.twig', $dir.'/Tests/Controller/'.$controller.'ControllerTest.php', $parameters);
     }
 
-    public function generateRouting(BundleInterface $bundle, $controller, array $action, $format)
+    public function generateRouting(BundleInterface $bundle, $controller, $format)
     {
         // annotation is generated in the templates
         if ('annotation' == $format) {
@@ -81,8 +83,14 @@ class ControllerGenerator extends Generator
             mkdir($dir);
         }
 
-        $controller = $bundle->getName().':'.$controller.':'.$action['basename'];
-        $name = strtolower(preg_replace('/([A-Z])/', '_\\1', $action['basename']));
+        $name = strtolower(preg_replace('/([A-Z])/', '_\\1', $bundle->getName().'_'.$controller));
+        //TODO get prefix from parameters
+        $prefix = '/api/';
+
+        $resource = $bundle->getNamespace()."\\Controller\\".$controller."Controller";
+
+        //$controller = $bundle->getName().':'.$controller.':'.$action['basename'];
+        //$name = strtolower(preg_replace('/([A-Z])/', '_\\1', $action['basename']));
 
         if ('yml' == $format) {
             // yaml
@@ -91,12 +99,13 @@ class ControllerGenerator extends Generator
             }
 
             $content .= sprintf(
-                "\n%s:\n    path:     %s\n    defaults: { _controller: %s }\n",
+                "\n%s:\n    type: rest\n    prefix: %s\n    resource: %s }\n",
                 $name,
-                $action['route'],
-                $controller
+                $prefix,
+                $resource
             );
         } elseif ('xml' == $format) {
+            throw new \Exception('XML route format not yet supported');
             // xml
             if (!isset($content)) {
                 // new file
@@ -124,6 +133,7 @@ EOT;
             $dom->loadXML($sxe->asXML());
             $content = $dom->saveXML();
         } elseif ('php' == $format) {
+            throw new \Exception('PHP route format not yet supported');
             // php
             if (isset($content)) {
                 // edit current file

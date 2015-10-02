@@ -59,13 +59,7 @@ class {{ controller }}Controller extends ResourceController
         {% endfor %}
     {%- endif -%}
 
-    {% if 'annotation' == format.routing -%}
-    /**
-     * @Route("{{ action.route }}")
-     */
-    {% endif -%}
-    public function {{ action.name }}({{- params|join(', ') -}})
-    {
+    {% set actionContent = '' %}
     {% if parentAction|length > 0 %}
         {% set values = [] %}
         {%- if actionParameters|length > 0 -%}
@@ -73,10 +67,23 @@ class {{ controller }}Controller extends ResourceController
                 {% set values = values|merge([name]) %}
             {% endfor %}
         {%- endif -%}
-        return parent::{{ parentAction }}(${{- values|join(', $') -}});
+        {% set paramString = values|join(', $') %}
+        {% if paramString|length > 0 %}
+            {% set paramString = "$"~paramString %}
+        {% endif %}
+        {% set actionContent = "return parent::"~parentAction~"("~paramString~");" %}
     {% else %}
-        return $this->handleView($this->view());
+        {% set actionContent = "return $this->handleView($this->view());" %}
     {% endif %}
+
+    {% if 'annotation' == format.routing -%}
+    /**
+     * @Route("{{ action.route }}")
+     */
+    {% endif -%}
+    public function {{ action.name }}({{- params|join(', ') -}})
+    {
+        {{ actionContent }}
     }
 
 {% endfor -%}
